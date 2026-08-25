@@ -3,7 +3,9 @@ package com.shopsphere.shopsphere.service;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Order;
+import com.shopsphere.shopsphere.entity.OrderStatus;
 import com.shopsphere.shopsphere.entity.Payment;
+import com.shopsphere.shopsphere.repository.OrderRepository;
 import com.shopsphere.shopsphere.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -11,12 +13,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
 
     @Value("${razorpay.key.id}")
     private String keyId;
@@ -24,7 +29,10 @@ public class PaymentService {
     @Value("${razorpay.key.secret}")
     private String keySecret;
 
-    public JSONObject createRazorpayOrder(Long orderId, Double amount) throws RazorpayException {
+    public Map<String, Object> createRazorpayOrder(Long orderId, Double amount) throws RazorpayException {
+        com.shopsphere.shopsphere.entity.Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
         RazorpayClient client = new RazorpayClient(keyId, keySecret);
 
         JSONObject orderRequest = new JSONObject();
@@ -35,6 +43,7 @@ public class PaymentService {
         Order razorpayOrder = client.orders.create(orderRequest);
 
         Payment payment = Payment.builder()
+                .order(order)
                 .razorpayOrderId(razorpayOrder.get("id"))
                 .amount(amount)
                 .status("CREATED")
@@ -42,11 +51,11 @@ public class PaymentService {
                 .build();
         paymentRepository.save(payment);
 
-        JSONObject response = new JSONObject();
-        response.put("razorpayOrderId", (Object) razorpayOrder.get("id"));
-        response.put("amount", (Object) amount);
-        response.put("currency", (Object) "INR");
-        response.put("keyId", (Object) keyId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("razorpayOrderId", razorpayOrder.get("id"));
+        response.put("amount", amount);
+        response.put("currency", "INR");
+        response.put("keyId", keyId);
         return response;
     }
 
@@ -66,7 +75,11 @@ public class PaymentService {
         payment.setStatus(isValid ? "PAID" : "FAILED");
         paymentRepository.save(payment);
 
-        if (!isValid) {
+        if (isValid) {
+            com.shopsphere.shopsphere.entity.Order order = payment.getOrder();
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+        } else {
             throw new RuntimeException("Payment signature verification failed");
         }
     }

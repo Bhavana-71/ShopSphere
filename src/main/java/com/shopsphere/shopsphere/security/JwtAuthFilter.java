@@ -31,19 +31,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7);
-        String email = jwtService.extractEmail(token);
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extractEmail(token);
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (!jwtService.isTokenExpired(token)) {
-                String role = jwtService.extractRole(token);
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (!jwtService.isTokenExpired(token)) {
+                    String role = jwtService.extractRole(token);
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                );
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Invalid/expired/malformed token — just proceed unauthenticated.
+            // Downstream permitAll routes still work; protected routes will correctly reject as 401/403.
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

@@ -24,6 +24,9 @@ public class Product {
     @Column(length = 1000)
     private String description;
 
+    @Column(length = 1000)
+    private String imageUrl;
+
     @Column(nullable = false)
     private Double price;
 
@@ -31,6 +34,7 @@ public class Product {
     private Integer stockQuantity;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer unitsSold = 0;
 
     @ManyToOne

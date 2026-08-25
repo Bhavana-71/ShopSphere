@@ -14,6 +14,8 @@ public class ProductRequest {
 
     private String description;
 
+    private String imageUrl;
+
     @NotNull
     @Positive(message = "Price must be greater than 0")
     private Double price;

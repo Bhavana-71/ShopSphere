@@ -16,14 +16,9 @@ public class InventoryAnalyticsService {
 
     private static final int LOW_STOCK_THRESHOLD = 10;
 
-    /**
-     * Low-stock alert: returns products with stock below threshold,
-     * ordered from lowest stock to highest using a min-heap.
-     */
     public List<ProductResponse> getLowStockAlerts() {
         List<Product> allProducts = productRepository.findAll();
 
-        // Min-heap ordered by stockQuantity ascending
         PriorityQueue<Product> minHeap = new PriorityQueue<>(
                 Comparator.comparingInt(Product::getStockQuantity)
         );
@@ -42,15 +37,9 @@ public class InventoryAnalyticsService {
         return result;
     }
 
-    /**
-     * Top-selling products: returns the top K products by unitsSold,
-     * using a min-heap of fixed size K (classic "top-K" pattern).
-     */
     public List<ProductResponse> getTopSellingProducts(int k) {
         List<Product> allProducts = productRepository.findAll();
 
-        // Min-heap ordered by unitsSold ascending — smallest is always at the root,
-        // so we can efficiently evict the smallest when the heap grows past size k
         PriorityQueue<Product> minHeap = new PriorityQueue<>(
                 Comparator.comparingInt(Product::getUnitsSold)
         );
@@ -58,11 +47,10 @@ public class InventoryAnalyticsService {
         for (Product product : allProducts) {
             minHeap.offer(product);
             if (minHeap.size() > k) {
-                minHeap.poll(); // remove the smallest, keeping only the top k
+                minHeap.poll();
             }
         }
 
-        // Heap now holds the top k, but in ascending order — reverse for descending display
         List<ProductResponse> result = new ArrayList<>();
         while (!minHeap.isEmpty()) {
             result.add(mapToResponse(minHeap.poll()));
@@ -77,6 +65,7 @@ public class InventoryAnalyticsService {
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
+                .imageUrl(product.getImageUrl())
                 .price(product.getPrice())
                 .stockQuantity(product.getStockQuantity())
                 .unitsSold(product.getUnitsSold())

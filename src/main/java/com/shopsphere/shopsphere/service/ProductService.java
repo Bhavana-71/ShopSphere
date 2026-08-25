@@ -23,6 +23,7 @@ public class ProductService {
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .imageUrl(request.getImageUrl())
                 .price(request.getPrice())
                 .stockQuantity(request.getStockQuantity())
                 .unitsSold(0)
@@ -59,6 +60,7 @@ public class ProductService {
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
+        product.setImageUrl(request.getImageUrl());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setCategory(category);
@@ -75,6 +77,7 @@ public class ProductService {
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
+                .imageUrl(product.getImageUrl())
                 .price(product.getPrice())
                 .stockQuantity(product.getStockQuantity())
                 .unitsSold(product.getUnitsSold())
